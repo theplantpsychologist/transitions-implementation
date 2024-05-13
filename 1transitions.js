@@ -39,7 +39,7 @@ function start(a,b){
     state = placeVertices(state)
     paper.project.clear()
     cp = render(state)
-    displaycp = displayCp(cp,10,10,490,490)
+    displaycp = displayCp(cp,10,10,790,790)
 
     // testv1 = new Vertex(0.2,0.2)
     // testv2 = new Vertex(0.8,0.8)
@@ -514,7 +514,7 @@ function render(state){
     const xmax = Math.max(...state.Ainput,...state.Binput)+1
     for(const v of vertices){
         v.x = (v.x-xmin)/(xmax-xmin)
-        v.y = -1*v.y/(xmax-xmin) + 0.5
+        v.y = -1*v.y/(xmax-xmin) + 0.35
     }
 
     //merge 0 length creases after render? look for A creases
@@ -603,34 +603,3 @@ function random(n){
 
 2.03, 2.54, 4.18, 7.21, 7.79
 2.07, 4.18, 6.05, 8.52, 8.83
-
-//==============old code================
-                // else if(xiA = xiB && SiA_1 == SiB){
-                //     //you're in test8a difficult case. alternating sums are different but positions are equal.
-                //     console.log("handling edge case type 1, skipping B:")
-                //     stepA(state)
-                //     iB += 1
-                //     // state.A[iA].L = 0
-                //     state.B[iB].L = 0.0001
-                //     state.B[iB].P.x -= 0.0001
-                //     state.B[iB].P.y -= 0.0001
-                //     // state.B[iB].P = state.A[iA].P
-                //     connect(state.A[iA],state.B[iB],state,'A')
-                //     iB += 1
-                //     state.root = state.A[iA]//.xint>=state.B[iB].xint? state.A[iA]: state.B[iB]
-                //     return initialize(state,false)
-                // }
-                // else if(xiA = xiB && SiA == SiB_1){
-                //     console.log("handling edge case type 1, skipping A:")
-                //     stepB(state)
-                //     iA += 1
-                //     // state.A[iA].L = 0
-                //     state.A[iA].L = 0.0001
-                //     state.A[iA].P.x -= 0.0001
-                //     state.A[iA].P.y += 0.0001
-                //     // state.B[iB].P = state.A[iA].P
-                //     connect(state.A[iA],state.B[iB],state,'A')
-                //     iA += 1
-                //     state.root = state.B[iB]//.xint>=state.B[iB].xint? state.A[iA]: state.B[iB]
-                //     return initialize(state,false)
-                // }
