@@ -6,50 +6,10 @@ The program is hosted at the following URL:
 https://web.mit.edu/wongb/www/origami/resources/1transitions.html
 
 ==========================================*/
-
-function start(a,b){
-    `
-    Main function to solve the transition.
-    Inputs (fed in from html): a,b,theta,startmv,beta0
-    output: cp file, display and/or download
-    `
-    console.log('=====STARTING=====')
-    //setup
-    var state = {
-        theta:parseFloat(thetaInput.value) * (2*Math.PI)/360,
-        beta_0:parseFloat(beta0input.value) * (2*Math.PI)/360,
-        Ainput:a.sort((x, y) => x - y),
-        Binput:b.sort((x, y) => x - y),
-        startmv:mvInput.value,
-    }
-    console.log(state)
-    console.log("alternating sums are equal:",eq(alternatingSum(a),alternatingSum(b)),state.Ainput,state.Binput,alternatingSum(a),alternatingSum(b))
-    if(eq(alternatingSum(a)==alternatingSum(b))){
-        alert("Warning: a flat foldable transtion could not be constructed because the alternating sums are not equal.")
-        return
-    }
-    state = setup(state)
-
-    //draw the input here in case it crashes and won't draw the rest. clear later
-    // paper.project.clear()
-    // cp = render(state)
-    // displaycp = displayCp(cp,10,10,490,490)
-
-    state = graph(state)
-    state = placeVertices(state)
-    paper.project.clear()
-    cp = render(state)
-    displaycp = displayCp(cp,10,10,790,790)
-
-    // testv1 = new Vertex(0.2,0.2)
-    // testv2 = new Vertex(0.8,0.8)
-    // testcrease = new Crease(testv1,testv2,'A')
-    // testcp = new CP([testv1,testv2],[testcrease])
-    // displaycp = displayCp(testcp,10,10,490,490)
-
-    console.log(state)
-    console.log('=====FINISHED=====')
-}
+const DISPLAY_X1 = 10
+const DISPLAY_Y1 = 10
+const DISPLAY_X2 = 790
+const DISPLAY_Y2 = 790
 
 class InputCrease{
     //represents the input crease, but is not itself the crease object
@@ -71,6 +31,65 @@ class Connection{
         this.creases = [inputCrease1,inputCrease2]
         this.mv = mv//start out undefined, define later
     }
+}
+async function start(a,b){
+    `
+    Main function to solve the transition.
+    Inputs (fed in from html): a,b,theta,startmv,beta0
+    output: cp file, display and/or download
+    `
+    console.log('=====STARTING=====')
+    //setup
+    var state = {
+        theta:parseFloat(thetaInput.value) * (2*Math.PI)/360,
+        beta_0:parseFloat(beta0input.value) * (2*Math.PI)/360,
+        Ainput:a.sort((x, y) => x - y),
+        Binput:b.sort((x, y) => x - y),
+        startmv:mvInput.value,
+        makeGif:makeGifInput.checked,
+    }
+    console.log("alternating sums are equal:",eq(alternatingSum(a),alternatingSum(b)),state.Ainput,state.Binput,alternatingSum(a),alternatingSum(b),"making gif:",state.makeGif)
+    if(eq(alternatingSum(a)==alternatingSum(b))){
+        alert("Warning: a flat foldable transtion could not be constructed because the alternating sums are not equal.")
+        return
+    }
+    state = setup(state)
+    //setup gif if requested
+    if(state.makeGif){
+        state.gif = new GIF({
+            workers:1,
+            quality:100,
+            // transparent: "#000000"
+            // width: document.getElementById("square").offsetWidth*2,
+            // height: document.getElementById("square").offsetHeight*2,
+        });
+        state.gif.on('finished',function(blob){
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(blob);
+            document.body.appendChild(img);
+        })
+        // state.gifFrames = []
+    }
+
+    // await addToGif(state)
+    state = await graph(state)
+    // await addToGif(state)
+    state = await placeVertices(state)
+    // await addToGif(state)
+    // await addToGif(state)
+    
+    // finalize gif things
+    if(state.makeGif){
+        console.log("beginning gif render")
+        await state.gif.render()
+        console.log("Gif render complete")
+    }
+
+    paper.project.clear()
+    cp = render(state)
+    displaycp = displayCp(cp,DISPLAY_X1,DISPLAY_Y1,DISPLAY_X2,DISPLAY_Y2,true)
+    console.log(state)
+    console.log('=====FINISHED=====')
 }
 
 function setup(state){
@@ -103,11 +122,10 @@ function setup(state){
 
     state.root = leftEndpoint
     connect(lastCrease,rightEndpoint,state,lastCrease.mv)
-
     return state
 }
 
-function graph(state){
+async function graph(state){
     "make the graph connections. start with the across connections first (in case there are any zero pleats) and then do the neighbor connections"
     /*
     you have two rolling indices, iA and iB, which represent the only two vertices that are available for connecting at a given time. We only have 3 possible new connections: iA to iB, iA to iA+1, or iB to iB+1.
@@ -124,7 +142,7 @@ function graph(state){
     var A0 = 0
     var B0 = 0
 
-    function stepA(state){
+    async function stepA(state){
         console.log("A steps forward")
         iAmv = state.A[iA].connections.map(c => c.mv)
         iAmv.push(state.A[iA].mv)//the mv of iB.P's current connections
@@ -132,8 +150,9 @@ function graph(state){
         connect(state.A[iA],state.A[iA+1],state,amv)
         connect(state.B[iB],state.A[iA+1],state,amv=='V'?'M':'V')
         iA += 1
+        await addToGif(state)
     }
-    function stepB(state){
+    async function stepB(state){
         console.log("B steps forward")
         iBmv = state.B[iB].connections.map(c => c.mv)
         iBmv.push(state.B[iB].mv)//the mv of iB.P's current connections
@@ -141,13 +160,15 @@ function graph(state){
         connect(state.B[iB],state.B[iB+1],state,bmv)//oppositemv)
         connect(state.A[iA],state.B[iB+1],state,bmv=='V'?'M':'V')//currentmv)
         iB += 1
+        await addToGif(state)
     }
-    function initialize(state,root = true){
+    async function initialize(state,root = true){
         "Recursively build the graph connections. initialize is called at the beginning or whenever the alternating sum is equal, for example, after closing a transition and returning back to the ridge"
         console.log("initializing graph...",iA,iB,)
         var local_firstCrease = state.A[iA].xint<=state.B[iB].xint? state.A[iA]: state.B[iB] //if equal, it's A
         var currentmv = local_firstCrease.mv
         var oppositemv = currentmv == 'V'?'M':'V'
+        // await addToGif(state)
         if (root){
             connect(state.root,local_firstCrease,state,oppositemv)
         } else if(currentmv = 'A'){
@@ -161,7 +182,9 @@ function graph(state){
             //     console.log("chose A",currentmv)
             // }
         }
+        await addToGif(state)
         connect(state.A[iA],state.B[iB],state,currentmv) //connect across
+        await addToGif(state)
         //end condition 
         if(iA==state.A.length-1 && iB==state.B.length-1){
             console.log("===Graph connections complete (initialize)===")
@@ -172,16 +195,16 @@ function graph(state){
             state.root = state.A[iA].xint>=state.B[iB].xint? state.A[iA]: state.B[iB] //if equal, it's A
             iA += 1
             iB += 1
-            initialize(state)
+            await initialize(state)
             return state
         } else{
             //first and last step are individual, otherwise need to be two steps at a time
             if(state.A[iA].xint<state.B[iB].xint){
                 console.log("initial step A:")
-                stepA(state)
+                await stepA(state)
             } else if(state.A[iA].xint>state.B[iB].xint){
                 console.log("initial step B:")
-                stepB(state)
+                await stepB(state)
             } else{
                 console.log("something went wrong (graph initial step)")
             }
@@ -201,7 +224,7 @@ function graph(state){
                 //final step before finishing. single step
                 else if(eq(SiA_1,SiB)&& ((iA==state.A.length-1 || iB==state.B.length-1) || state.A[iA+1].xint < state.B[iB+1].xint)){
                     console.log("final step A:")
-                    stepA(state)
+                    await stepA(state)
                     if(iA==state.A.length-1 && iB==state.B.length-1){
                         console.log("===Graph connections complete (while loop)===")
                         return state
@@ -209,12 +232,12 @@ function graph(state){
                     state.root = state.A[iA]
                     iA += 1
                     iB += 1
-                    initialize(state)
+                    await initialize(state)
                 }
                 else if(eq(SiA,SiB_1) && ((iA==state.A.length-1 || iB==state.B.length-1) || state.A[iA+1].xint > state.B[iB+1].xint)){
                     //this is the last one--final step
                     console.log("final step B:")
-                    stepB(state)
+                    await stepB(state)
                     if(iA==state.A.length-1 && iB==state.B.length-1){
                         console.log("===Graph connections complete (while loop)===")
                         return state
@@ -222,25 +245,25 @@ function graph(state){
                     state.root = state.B[iB]
                     iA += 1
                     iB += 1
-                    initialize(state)
+                    await initialize(state)
                 } 
                 //core operation: double step
                 else if(Math.abs(SiA_1) < Math.abs(SiB) && iA<state.A.length-2){
                     //A has lower alternating sum, and lower position
                     console.log("double step A:")
-                    stepA(state)
-                    stepA(state)
+                    await stepA(state)
+                    await stepA(state)
                 } 
                 else if(Math.abs(SiA) > Math.abs(SiB_1)&& iB<state.B.length-2){
                     //B has lower alternating sum, and lower position
                     console.log("double step B:")
-                    stepB(state)
-                    stepB(state)
+                    await stepB(state)
+                    await stepB(state)
                 }
                 //edge case type 1
                 else if(!(iA>=state.A.length-1 || iB>=state.B.length-1) & eq(Math.abs(SiA-SiB), Math.min(state.A[iA+1].xint,state.B[iB+1].xint))){
                     console.log("handling edge case type 1, skipping A:")
-                    stepB(state)
+                    await stepB(state)
                     iA += 1
                     // state.A[iA].L = 0
                     state.A[iA].L = 0.0001
@@ -250,7 +273,7 @@ function graph(state){
                     connect(state.A[iA],state.B[iB],state,'A')
                     iA += 1
                     state.root = state.B[iB]//.xint>=state.B[iB].xint? state.A[iA]: state.B[iB]
-                    return initialize(state,false)
+                    return await initialize(state,false)
                 }
                 //edge case type 2
                 else if(!(iA>=state.A.length-1 || iB>=state.B.length-1) & Math.abs(SiA-SiB) < Math.min(state.A[iA+1].xint,state.B[iB+1].xint)){
@@ -278,6 +301,19 @@ function graph(state){
         console.log("You shouldn't be down here")
         return state
     }
+    await addToGif(state)
+    // if(state.makeGif){
+        for(const C of state.A){
+            // C.L = 
+            C.P.x = C.xint - 1
+            C.P.y = 1
+        }
+        for(const C of state.B){
+            // C.L = 1
+            C.P.x = C.xint -1
+            C.P.y = -1
+        }
+    // }
     //Connect the ridge to the first and last crease. A and B are still sorted
     var firstCrease = state.Ainput[0]<=state.Binput[0]? state.A[0]: state.B[0] //if equal, it's A
     var lastCrease = state.Ainput[state.Ainput.length-1]>=state.Binput[state.Binput.length-1]? state.A[state.A.length-1]: state.B[state.B.length-1]
@@ -292,11 +328,12 @@ function graph(state){
 
     state.root = leftEndpoint
     connect(lastCrease,rightEndpoint,state,lastCrease.mv)
+    // addToGif(state)
 
-    return initialize(state)
+    return await initialize(state)
 }
 
-function placeVertices(state){
+async function placeVertices(state){
     "move the vertices around. Define a length L for all input creases"
 
     //start by fixing the position of the firstCrease and its guaranteed two connections. From there, any crease whose all connections except for 1 have a defined L, can define the position of the last one based on kawasaki (perhaps a complicated calculation though, but guaranteed to go one at a time. although maybe will need to use beta0 again at some point)
@@ -317,12 +354,26 @@ function placeVertices(state){
     //     C.P.y = -1
     // }
     // return state
+
+    // if(state.makeGif){
+    //     for(const C of state.A){
+    //         C.L = null
+    //         C.P.x = C.xint 
+    //         C.P.y = 0
+    //     }
+    //     for(const C of state.B){
+    //         C.L = null
+    //         C.P.x = C.xint 
+    //         C.P.y = 0
+    //     }
+    //     await addToGif(state)
+    // }
     
     var iA = 0
     var iB = 0
     var stop = 0
 
-    function stepA(state){
+    async function stepA(state){
         "Here, to 'step' A means that A[iA] has only one possible angle for the next crease, so we'll extend using flat foldability angles towards the next crease in A."
         console.log("A steps forward from",state.A[iA].xint)
         // the new placement will be the last one added to connectedCreases
@@ -333,13 +384,14 @@ function placeVertices(state){
         state.A[iA].angles = [Math.PI-state.theta].concat(state.A[iA].angles).sort()
         beta_i = alternatingSum(state.A[iA].angles) - Math.PI
         newPlacement.L = state.A[iA].L + Math.sin(beta_i)/Math.sin(Math.PI-beta_i-state.theta) * (newPlacement.xint - state.A[iA].xint) //from law of sines
-        newPlacement.P.x -= Math.abs(newPlacement.L)*Math.cos(state.theta)
-        newPlacement.P.y += newPlacement.L*Math.sin(state.theta) //watch out, this crease could be in A or in B
+        newPlacement.P.x = newPlacement.xint - Math.abs(newPlacement.L)*Math.cos(state.theta)
+        newPlacement.P.y = newPlacement.L*Math.sin(state.theta) //watch out, this crease could be in A or in B
         // state.A[iA].P.angularFoldable = true
         iA += 1
         // console.log(beta_i,newPlacement.L)
+        await addToGif(state)
     }
-    function stepB(state){
+    async function stepB(state){
         console.log("B steps forward from",state.B[iB].xint)
         var newPlacement = state.B[iB].connectedCreases[state.B[iB].connectedCreases.length-1]
 
@@ -348,21 +400,27 @@ function placeVertices(state){
         state.B[iB].angles = [Math.PI+state.theta].concat(state.B[iB].angles).sort()
         beta_i = alternatingSum(state.B[iB].angles) - Math.PI
         newPlacement.L = state.B[iB].L + Math.sin(-beta_i)/Math.sin(Math.PI+beta_i-state.theta) * (newPlacement.xint - state.B[iB].xint)
-        newPlacement.P.x -= Math.abs(newPlacement.L)*Math.cos(state.theta)
-        newPlacement.P.y -= newPlacement.L*Math.sin(state.theta) //watch out, this crease could be in A or in B
+        newPlacement.P.x = newPlacement.xint- Math.abs(newPlacement.L)*Math.cos(state.theta)
+        newPlacement.P.y = -1* newPlacement.L*Math.sin(state.theta) //watch out, this crease could be in A or in B
         // state.B[iB].P.angularFoldable = true
         iB += 1
+        await addToGif(state)
     }
-    function initialize(state){
+    async function initialize(state){
         // base case: if reached the end, return
-        if(iA>=state.A.length-1 && iB>=state.B.length-1){
+        if(iA>state.A.length-1 && iB>state.B.length-1){
             console.log("===vertex placement complete (initialize)===")
+            await addToGif(state)
             return state
         }
         // equal x intercepts -> recurse
         if(eq(state.A[iA].xint, state.B[iB].xint)){
             state.A[iA].L = 0
+            state.A[iA].P.x = state.A[iA].xint
+            state.A[iA].P.y = 0
             state.B[iB].L = 0
+            state.B[iB].P.x = state.B[iB].xint
+            state.B[iB].P.y = 0
             iA += 1
             iB += 1
             console.log("reinitializing: equal xint")
@@ -372,15 +430,23 @@ function placeVertices(state){
         if(state.A[iA].xint<state.B[iB].xint){
             console.log("initial step A",iA,iB)
             state.A[iA].L = 0
+            state.A[iA].P.x = state.A[iA].xint
+            state.A[iA].P.y = 0
+            await addToGif(state)
             state.B[iB].L = Math.sin(state.theta + state.beta_0)/Math.sin(state.beta_0) * (state.B[iB].xint-state.A[iA].xint)
-            state.B[iB].P.x -= state.B[iB].L*Math.cos(state.theta)
-            state.B[iB].P.y -= state.B[iB].L*Math.sin(state.theta)
+            state.B[iB].P.x = state.B[iB].xint - state.B[iB].L*Math.cos(state.theta)
+            state.B[iB].P.y = -1* state.B[iB].L*Math.sin(state.theta)
+            await addToGif(state)
         } else {
             console.log("initial step B",iA,iB)
             state.B[iB].L = 0
+            state.B[iB].P.x = state.B[iB].xint
+            state.B[iB].P.y = 0
+            await addToGif(state)
             state.A[iA].L = Math.sin(state.theta + state.beta_0)/Math.sin(state.beta_0) * (state.A[iA].xint-state.B[iB].xint)
-            state.A[iA].P.x -= state.A[iA].L*Math.cos(state.theta)
-            state.A[iA].P.y += state.A[iA].L*Math.sin(state.theta)
+            state.A[iA].P.x = state.A[iA].xint - state.A[iA].L*Math.cos(state.theta)
+            state.A[iA].P.y = state.A[iA].L*Math.sin(state.theta)
+            await addToGif(state)
         }
 
         while(stop<100 && iB != state.B.length & iA != state.A.length){
@@ -410,11 +476,11 @@ function placeVertices(state){
             //A is ready
             if(iAneighbors == 1 && state.A[iA].connectedCreases.includes(state.A[iA+1])){ //if all of A[iA]'s connections except for one have a defined L. And A[iA+1] is actually connected to A[iA]
                 //calculate the position of the remaining connection based on kawasaki
-                stepA(state)
+                await stepA(state)
             }
             //B is ready
             else if(iBneighbors == 1 && state.B[iB].connectedCreases.includes(state.B[iB+1])){
-                stepB(state)
+                await stepB(state)
             } else {
                 //neither A nor B are ready to step forward
                 console.log("got stuck. undefined connections for A and B:",iAneighbors,iBneighbors, "for iA and iB:",iA,iB,"at xints",state.A[iA].xint,state.B[iB].xint)
@@ -433,29 +499,29 @@ function placeVertices(state){
         return state
     }
     console.log("initializing placement...",iA,iB)
-    initialize(state)
+    await initialize(state)
     console.log("== Vertex placement complete ==")
     return state
 }
 
 // 
-function render(state){
-    //go through all the data stored in the state and create a cp object to be displayed
-    //creases come from state.connections, as well as the input creases (need new vertices for upper and lower bounds)
-    //vertices come from P and the newly made upper and lower bound vertices
-    //deal with zero pleats
-    console.log("initializing render...")
+function render(rawstate,checkFoldability = true){
+    //go through all the data stored in the state and create a cp object to be displayed. The actual displaying is done in the displayCp function of origami.js
+    // console.log("initializing render...")
+    var state = _.cloneDeep(rawstate) //deep copy
+
     var vertices = []
     var creases = []
     const upperBound = Math.max(...state.A.map(a => a.P.y))*2+1
     // console.log(state.A.map(a => a.P.y), upperBound)
     const lowerBound = Math.min(...state.B.map(b => b.P.y))*2-1
 
-    console.log("scraping A")
+    // console.log("scraping A")
     for(const c of state.A){
-        newV = new Vertex(c.xint-upperBound*Math.cos(state.theta),upperBound*Math.sin(state.theta))
+        newV = new Vertex(c.xint-upperBound*Math.cos(state.theta),upperBound*Math.sin(state.theta)) //the vertex (theoretically infinitely far away) at the other end of an input crease in A
         vertices.push(newV)
         if(c.connectedCreases.length == 1){
+            //this is the case where there is locally no shifting, and it's vertex overlaps with the vertex of an input crease of the opposite set
             newC = new Crease(c.connectedCreases[0].P,newV,c.mv)
             c.connectedCreases[0].P.creases.push(newC)
             const index = state.connectorCreases.indexOf(c.connections[0]);
@@ -474,7 +540,7 @@ function render(state){
             // vertices.push(newV)
         }
     }
-    console.log("scraping B")
+    // console.log("scraping B")
     for(const c of state.B){
         newV = new Vertex(c.xint+lowerBound*Math.cos(state.theta),lowerBound*Math.sin(state.theta))
         vertices.push(newV)
@@ -497,7 +563,7 @@ function render(state){
             // vertices.push(newV)
         }
     }
-    console.log("scraping connector creases")
+    // console.log("scraping connector creases")
     for(const connection of state.connectorCreases){
         newC = new Crease(connection.creases[0].P,connection.creases[1].P,connection.mv)
         connection.creases[0].P.creases.push(newC)
@@ -507,7 +573,7 @@ function render(state){
     vertices.push(state.leftEndpoint.P)
     vertices.push(state.rightEndpoint.P)
 
-    console.log("rescale and output")
+    // console.log("rescale and output")
     //rescale everything to fit in the box. xmin goes to 0, xmax goes to 1
     //also, flip the y upside down
     const xmin = Math.min(...state.Ainput,...state.Binput)-upperBound*Math.cos(state.theta)
@@ -520,10 +586,30 @@ function render(state){
     //merge 0 length creases after render? look for A creases
 
     output = new CP(vertices,creases)
-    output.checkFoldability()
-    console.log(output)
-    console.log("===render complete===")
+    if(checkFoldability){
+        output.checkFoldability()
+    }
+    //console.log(output)
+    // console.log("===render complete===")
     return output
+}
+async function addToGif(state){
+    return new Promise((resolve,reject)=>{
+        if(state.makeGif){
+            paper.project.clear()
+            cp = render(state,false)
+            displaycp = displayCp(cp,DISPLAY_X1,DISPLAY_Y1,DISPLAY_X2,DISPLAY_Y2,false)
+            // state.gifFrames.push(cloneCanvas(document.getElementById("square")))
+            const clonedCanvas = cloneCanvas(document.getElementById("square"));
+            // document.body.appendChild(clonedCanvas);
+            state.gif.addFrame(clonedCanvas,{delay:200})
+            console.log("added frame",state.gif.frames.length)
+            // resolve(state.gif)
+            setTimeout(()=>{resolve(state.gif)},1000)
+        } else{
+            resolve()
+        }
+    })
 }
 
 //=================helper functions==============
@@ -593,6 +679,21 @@ function random(n){
     } else{
         return random(n)
     }
+}
+function cloneCanvas(oldCanvas) {
+    // Create a new canvas
+    let newCanvas = document.createElement('canvas');
+    let context = newCanvas.getContext('2d');
+
+    // Set dimensions
+    newCanvas.width = oldCanvas.width;
+    newCanvas.height = oldCanvas.height;
+
+    // Apply the old canvas to the new one
+    context.drawImage(oldCanvas, 0, 0);
+
+    // Return the new canvas
+    return newCanvas;
 }
 //infinite loop case. It reaches the point where it says "rescale and output" then freezes:
 2.02, 4.95, 8.9

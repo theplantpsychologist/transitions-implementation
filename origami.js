@@ -1,4 +1,4 @@
-/*Origami classes and data structures
+/*A general library of origami classes and data structures
 
 Vertex: 
 - x and y coordinates on cp
@@ -432,7 +432,7 @@ function split(creases,vertices){
     return[creases,vertices]
     //when this is done, fix the read cp function
 }
-function displayCp(CP,x1,y1,x2,y2){ //so you can position where to draw it
+function displayCp(CP,x1,y1,x2,y2,showErrors = true){ //so you can position where to draw it
     function convertx(cp){
         //Converting cp coords, which range from 0,1, into js coords which range from x1,x2 and y1,y2
         return x1+cp*(x2-x1);
@@ -456,21 +456,22 @@ function displayCp(CP,x1,y1,x2,y2){ //so you can position where to draw it
     }
     creaselines.strokeWidth = (x2-x1)/200;
 
-    var errorcircles = new paper.Group();
-    for(i=0;i<CP.vertices.length;i++){
-        if(!CP.vertices[i].angularFoldable){
-            var circle = new paper.Path.Circle({
-                center: new paper.Point(convertx(CP.vertices[i].x),converty(CP.vertices[i].y)),
-                radius: (x2-x1)/30,
-                opacity: 0.3,
-                fillColor: 'purple'
-            })
-            errorcircles.addChild(circle);
-        }
-    }
     var cp = new paper.Group()
     cp.addChild(creaselines)
-    cp.addChild(errorcircles)
+    if(showErrors){
+        var errorcircles = new paper.Group();
+        for(i=0;i<CP.vertices.length;i++){
+            if(!CP.vertices[i].angularFoldable){
+                var circle = new paper.Path.Circle({
+                    center: new paper.Point(convertx(CP.vertices[i].x),converty(CP.vertices[i].y)),
+                    radius: (x2-x1)/30,
+                    opacity: 0.2,
+                    fillColor: 'purple'
+                })
+                errorcircles.addChild(circle);
+            }
+        }
+        cp.addChild(errorcircles)}
     return cp
 }
 function convertFOLD(cp) {
