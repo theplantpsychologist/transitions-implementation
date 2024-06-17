@@ -510,7 +510,8 @@ function downloadFOLD(cp){
     var edges_vertices = []
     var edges_assignment = []
     var faces_vertices = []
-    for(const face of cp.faces){
+    if(cp.faces){
+        for(const face of cp.faces){
         var facevertices = []
         for(const vertex of face.vertices){
             var index = vertices_coords.findIndex(item => item[0]==vertex.x & item[1]==vertex.y)
@@ -529,6 +530,8 @@ function downloadFOLD(cp){
         }
         faces_vertices.push(facevertices)
     }
+    }
+    
     var cpobject = {
         "vertices_coords":vertices_coords,
         "edges_vertices": edges_vertices,

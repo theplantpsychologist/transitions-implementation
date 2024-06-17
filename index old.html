@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Transitions</title>
+    <link rel="stylesheet" type = "text/css" href="style.css">
+</head>
+<body>
+    <div id='wrapper'>
+        <h1>Universal transitions</h1>
+        <noscript>Please enable javascript to use this app.</noscript>
+        <div>
+            <label for="topInput">Positions of top creases (A): </label>
+            <input type="text" id="topInput" value = "[0,1,2,3]">
+            <br>
+            <label for="bottomInput">Positions of bottom creases (B): </label>
+            <input type="text" id="bottomInput" value = "[2.5,3.5,4.5,5.5]">
+            <br>
+            <label for="angle">Angle between ridge and axials (theta):</label>
+            <input type="text" id = "thetaInput" value="45">
+            <br>
+            <label for="beta0">beta 1: </label>
+            <input type="text" id = "beta0input" value = "90">
+            <br>
+            <label for="mvInput">Starting crease mv: </label>
+            <input type="text" id = "mvInput" value = "M">
+            <br>
+            <label for="makeGifInput">Make animation of construction (warning: very slow)</label>
+            <input type="checkbox" id = "makeGifInput">
+        </div>
+        <button type = button onclick="{
+            start(JSON.parse(topInput.value),
+                    JSON.parse(bottomInput.value)
+                )
+        }">Build transition</button>
+        <div>
+            <button type = button onclick="{
+                start([2,3,4,5,7],[2,3,4,5,6,7,8])
+            }">Test 1 (no shifting)</button>
+
+            <button type = button onclick="{
+                start([0,1,2],[3])
+            }">Test 2 (not possible)</button>
+
+            <button type = button onclick="{
+                start([0,1],[3,4])
+            }">Test 3 (2:2)</button>
+
+            <!-- <button type = button onclick="{
+                start([0,1],[3,4])
+            }">Test 3</button> -->
+
+            <button type = button onclick="{
+                start([0,1,2,3,4],[2])
+            }">Test 4a (n:1)</button>
+
+            <button type = button onclick="{
+                start([2],[0,1,2,3,4])
+            }">Test 4b (1:n)</button>
+
+            <button type = button onclick="{
+                // start([2.5,4,5.5],[0,1,2,3,4,5,6,7,8])
+                start([3,5,6],[0,2,3,5,6,8,9,11,12])
+                // start([2,4,5],[0,2,3,5,7])
+            }">Test 5a (3:n)</button>
+
+            <button type = button onclick="{
+                // start([2.5,4,5.5],[0,1,2,3,4,5,6,7,8])
+                start([0,2,3,5,6,8,9,11,12],[2,3,4,5,6])
+                // start([2,4,5],[0,2,3,5,7])
+            }">Test 5b (5:n)</button>
+
+            <button type = button onclick="{
+                start([-2,-1,0,1,2,3,4],[-2,-1,1,3,4])
+            }">Test 5c (1:n + sides)</button>
+
+            <button type = button onclick="{
+                start([0,1,2,3,4,5,6,7,8,9,10,11],[1,4,7,10])
+            }">Test 6a (separate 3:1)</button>
+            <button type = button onclick="{
+                start([1,4,7,10],[0,1,2,3,4,5,6,7,8,9,10,11])
+            }">Test 6b (separate 1:3)</button>
+            
+
+            <button type = button onclick="{
+                start([0,1,2,3],[1.5,2.5,3.5,4.5])
+            }">Test 7 (4:4)</button>
+
+            <button type = button onclick="{
+                start([0,1,2,3,4,5],[1,2,3,5])
+            }">Test 8a (edge case type 1)</button>
+            <button type = button onclick="{
+                start([0,1,3,4,5],[1,3,5])
+            }">Test 8b (edge case type 2)</button>
+            <button type = button onclick="{
+                start([0,1,3,4,6,7,9,10,11,13,14,16,17,19,20],[0,2,3,5,6,8,9,10,12,13,15,16,18,19,20])
+            }">Test 9 (fun)</button>
+            <!-- <button type = button onclick="{
+                start([0,1,3,4,6,7,9,10,12,13,15,16,18,19,  21,  23,24,26,27,29,30,32,33,35,36,38,39,40,41,42],
+                      [0,2,3,5,6,8,9,11,12,14,15,17,18,  20,  22,23,25,26,28,29,31,32,34,35,37,38,40,41])
+            }">Test 9 (fun)</button> -->
+            <button type = button onclick="{
+                start([0,1,3,4,6,7,9,10,12,13,15,16,18,19,  21,22,23,  25,26,28,29,31,32,34,35,37,38,41],
+                    [0,2,3,5,6,8,9,11,12,14,15,17,18,  20,21,22,  24,25,27,28,30,31,33,34,36,37,39,40])
+            }">Test 9 (more fun)</button>
+            <button type = button onclick="{
+                ab = random(10)
+                start(ab[0],ab[1])
+            }">random</button>
+        </div> 
+        
+        <canvas id="square" width="800" height = "600"></canvas>
+        <script src="paper-core.js"></script>
+        <script src="origami.js"></script>
+        <script src="transitions.js"></script>
+        <script src="gif.js"></script> 
+        <script src="gif.worker.js"></script> 
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        <script type="text/javascript" data-paper-ignore="true">
+            paper.setup(document.getElementById("square"))
+            var theta
+            var a 
+            var b
+
+            var displaycp = new paper.Group();
+
+            start(JSON.parse(topInput.value).sort(),
+                    JSON.parse(bottomInput.value).sort()
+                ) 
+        </script>
+
+        <div>
+            <h2>Notes about this program</h2>
+            <p>This is an implementation of an algorithm described in an OSME8 paper written by Brandon Wong and Erik Demaine, titled <i>Algorithmic Transitions between Parallel Pleats</i> . Implementation built by Brandon Wong. The code for this program can be found <a href="https://github.com/theplantpsychologist/transitions-implementation">here</a>. 
+            <br><br>
+            In order to construct a flat foldable transition, the alternating sums of A and B must be equal. For example, if A is [1,2,3,4] and B is [2,3,4,5], then the alternating sums are 1-2+3-4 = 2-3+4-5 and a flat foldable transition is possible.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

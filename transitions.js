@@ -40,12 +40,12 @@ async function start(a,b){
     `
     console.log('=====STARTING=====')
     //setup
-    var state = {
+    state = {
         theta:parseFloat(thetaInput.value) * (2*Math.PI)/360,
         beta_0:parseFloat(beta0input.value) * (2*Math.PI)/360,
         Ainput:a.sort((x, y) => x - y),
         Binput:b.sort((x, y) => x - y),
-        startmv:mvInput.value,
+        startmv:document.querySelector('input[name="mvInput"]:checked').value,
         makeGif:makeGifInput.checked,
     }
     console.log("alternating sums are equal:",eq(alternatingSum(a),alternatingSum(b)),state.Ainput,state.Binput,alternatingSum(a),alternatingSum(b),"making gif:",state.makeGif)
@@ -58,25 +58,24 @@ async function start(a,b){
     if(state.makeGif){
         state.gif = new GIF({
             workers:1,
-            quality:100,
+            quality:10,
+            transparent: 'rgba(0,0,0,0)'
             // transparent: "#000000"
-            // width: document.getElementById("square").offsetWidth*2,
-            // height: document.getElementById("square").offsetHeight*2,
+            // width: document.getElementById("square").width,
+            // height: document.getElementById("square").height,
         });
         state.gif.on('finished',function(blob){
             var img = document.createElement('img');
             img.src = URL.createObjectURL(blob);
-            document.body.appendChild(img);
+            img.width =  document.getElementById("square").width/4
+            img.height =  document.getElementById("square").height/4
+            var squareCanvas = document.getElementById("square");
+            squareCanvas.parentNode.insertBefore(img, squareCanvas.nextSibling);
         })
         // state.gifFrames = []
     }
-
-    // await addToGif(state)
     state = await graph(state)
-    // await addToGif(state)
     state = await placeVertices(state)
-    // await addToGif(state)
-    // await addToGif(state)
     
     // finalize gif things
     if(state.makeGif){
@@ -87,7 +86,7 @@ async function start(a,b){
 
     paper.project.clear()
     cp = render(state)
-    displaycp = displayCp(cp,DISPLAY_X1,DISPLAY_Y1,DISPLAY_X2,DISPLAY_Y2,true)
+    displaycp = displayCp(cp,DISPLAY_X1,DISPLAY_Y1,DISPLAY_X2,DISPLAY_Y2,false)
     console.log(state)
     console.log('=====FINISHED=====')
 }
@@ -602,7 +601,8 @@ async function addToGif(state){
             // state.gifFrames.push(cloneCanvas(document.getElementById("square")))
             const clonedCanvas = cloneCanvas(document.getElementById("square"));
             // document.body.appendChild(clonedCanvas);
-            state.gif.addFrame(clonedCanvas,{delay:200})
+            state.gif.addFrame(clonedCanvas,{
+                delay:200})
             console.log("added frame",state.gif.frames.length)
             // resolve(state.gif)
             setTimeout(()=>{resolve(state.gif)},1000)
@@ -610,6 +610,14 @@ async function addToGif(state){
             resolve()
         }
     })
+}
+function saveCP(state){
+    cp = render(state,false)
+    downloadCP(cp)
+}
+function saveFOLD(state){
+    cp = render(state,false)
+    downloadFOLD(cp)
 }
 
 //=================helper functions==============
