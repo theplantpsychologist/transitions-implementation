@@ -9,7 +9,7 @@
 <h2>Instructions</h2>
 <p>
     First, enter the positions of the creases in the top and bottom sets. Alternatively, you can select a preset test case to see a variety of cases the algorithm can handle. Then, enter the &theta; angle that the parallel creases make with the common ridge, as well as the &beta;<sub>1</sub> angle that initializes the vertex placements. Check the box if you would like to generate a gif of the construction process. Finally, click "Build transition" to generate the crease pattern. The crease pattern will be displayed on the canvas.
-
+<br><br>
     You can save the transition crease pattern by right clicking on the canvas and selecting "Save Image As..." which will save the canvas as a .png file. You can do the same to save the gif, if generated. You can also download the crease pattern as a .CP or .FOLD file by selecting the respective buttons at the bottom of the page.
 </p>
 <h2>External libraries</h2>
