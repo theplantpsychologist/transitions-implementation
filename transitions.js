@@ -3,7 +3,7 @@
 This code is published as an implementation of the algorithm described in the paper "Algorithmic Transitions between Parallel Pleats" by Brandon Wong and Erik Demaine, published in 8OSME. 
 
 The program is hosted at the following URL:
-https://web.mit.edu/wongb/www/origami/resources/1transitions.html
+https://theplantpsychologist.github.io/transitions-implementation/
 
 ==========================================*/
 const DISPLAY_X1 = 10
@@ -167,19 +167,10 @@ async function graph(state){
         var local_firstCrease = state.A[iA].xint<=state.B[iB].xint? state.A[iA]: state.B[iB] //if equal, it's A
         var currentmv = local_firstCrease.mv
         var oppositemv = currentmv == 'V'?'M':'V'
-        // await addToGif(state)
         if (root){
             connect(state.root,local_firstCrease,state,oppositemv)
         } else if(currentmv = 'A'){
             currentmv = state.startmv == 'M'?'V':'M'
-            // console.log(state.B[iB+1].mv,state.A[iA].mv,alternatingSum(state.Ainput.slice(0,iA+1)),alternatingSum(state.Binput.slice(0,iB+2)))
-            // if(alternatingSum(state.Ainput.slice(A0,iA+1)) < alternatingSum(state.Binput.slice(B0,iB+2))){
-            //     currentmv = state.B[iB+1].mv
-            //     console.log("chose B",currentmv)
-            // }else{
-            //     currentmv = state.A[iA].mv
-            //     console.log("chose A",currentmv)
-            // }
         }
         await addToGif(state)
         connect(state.A[iA],state.B[iB],state,currentmv) //connect across
@@ -209,7 +200,7 @@ async function graph(state){
             }
             //This while loop is basically what's described in the paper--everything outside is for handling edge cases, or cases where multiple transitions are snuck in as one (handling breaks)
             var stop = 0 
-            while(stop<1000){
+            while(stop<100000){
                 var SiA_1 = alternatingSum(state.Ainput.slice(A0,iA+2)) //alternating sum up to iA + 1
                 var SiA = alternatingSum(state.Ainput.slice(A0,iA+1)) //alternating sum up to iA
                 var SiB_1 = alternatingSum(state.Binput.slice(B0,iB+2)) //alternating sum up to iB + 1
@@ -297,7 +288,6 @@ async function graph(state){
                 stop += 1
             }
         }
-        console.log("You shouldn't be down here")
         return state
     }
     await addToGif(state)
@@ -480,7 +470,8 @@ async function placeVertices(state){
             //B is ready
             else if(iBneighbors == 1 && state.B[iB].connectedCreases.includes(state.B[iB+1])){
                 await stepB(state)
-            } else {
+            } 
+            else {
                 //neither A nor B are ready to step forward
                 console.log("got stuck. undefined connections for A and B:",iAneighbors,iBneighbors, "for iA and iB:",iA,iB,"at xints",state.A[iA].xint,state.B[iB].xint)
                 if(iAneighbors == 0){

@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal Transition Generator</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
     <style>
         body {
             font-family: 'Avenir','Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif, Helvetica, sans-serif;
@@ -85,7 +85,6 @@
         .notes p {
             line-height: 1.5;
         }
-    </style>
     </style>
 </head>
 <body>
@@ -206,7 +205,7 @@
             <div style="padding: 50px;">
                 <h2>About</h2>
                 <p>
-                    This is an implementation of an algorithm described in a paper written by <a href="https://web.mit.edu/wongb/www/origami/">Brandon Wong</a> and <a href="https://erikdemaine.org/">Erik Demaine</a>, titled <i>Algorithmic Transitions between Parallel Pleats</i>, published in 8OSME (the 8th International Meeting on Origami in Science, Mathematics and Education). This implementation was built by Brandon Wong. The source code for this program can be found <a href="https://github.com/theplantpsychologist/transitions-implementation">here</a>.
+                    This is an implementation of an algorithm described in a paper written by <a href="https://web.mit.edu/wongb/www/origami/">Brandon Wong</a> and <a href="https://erikdemaine.org/">Erik Demaine</a>, titled <i>Algorithmic Transitions between Parallel Pleats</i>, published in 8OSME (the 8th International Meeting on Origami in Science, Mathematics and Education). You can read the paper and other details <a href="https://web.mit.edu/wongb/www/origami/engineering/OSME%20transitions.html">here</a>. This implementation was built by Brandon Wong. The source code for this program can be found <a href="https://github.com/theplantpsychologist/transitions-implementation">here</a>.
                     <br><br>
                     This algorithm constructs a flat foldable transition between two sets of parallel creases across a common ridge crease, which is equivalent to a ridge level shifter but with aribitrary crease positions. In order for a flat foldable transition to exist, the alternating sums of the x-intercepts of creases must be equal for the two sets. For example, if set A has creases located at [1,2,3,4] and set B has creases located at [2,3,4,5], then the alternating sums are 1-2+3-4 = 2-3+4-5 and a flat foldable transition exists.
                 </p>
